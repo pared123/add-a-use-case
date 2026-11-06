@@ -1467,7 +1467,7 @@ Details:
 1. The course admin or instructor indicates to deactivate a student.
 2. The course admin or instructor views the details of this student through UC-STU-view-student: View a student.
 3. The course admin or instructor chooses to deactivate this student.
-4. The system alerts the course admin or instructor of the consequences of this deactivation defined in the Associated Information of this use case, warns about the deactivation, and asks for confirmation.
+4. The system alerts the course admin or instructor of the consequences of this deactivation defined in the Associated Information of this use case (she can no longer log in, is no longer reminded or evaluated, and stays on her team with her work kept), warns about the deactivation, and asks for confirmation.
 5. The course admin or instructor confirms the deactivation.
 6. The system deactivates the student and alerts the course admin or instructor that this student has been deactivated.
 7. Use case ends.
@@ -1488,7 +1488,7 @@ Details:
 
 **Priority:** Low
 **Frequency of Use:** Rare. Occurs occasionally when a student withdraws from a course section.
-**Business Rules:** BR-student-lifecycle
+**Business Rules:** BR-student-lifecycle (who may deactivate; she stays on her team), BR-section-scoped-access, BR-submission-owed (she owes nothing, so she is not reminded), BR-evaluatee-active (her teammates no longer evaluate her)
 
 **Associated Information:**
 - Consequence of the deactivation: The student will no longer be able to log in or submit weekly activity reports and peer evaluations, but the student's account and her previously submitted work are kept in the system. Deactivation will NOT remove the student from the system, and the account can be reactivated in the future (UC-STU-reactivate-student: Reactivate a student). This is distinct from deletion (UC-STU-delete-student: Delete a student), which is a physical, unrecoverable delete. The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
