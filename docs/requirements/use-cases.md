@@ -1532,6 +1532,7 @@ Details:
 
 **Associated Information:**
 - The course admin or instructor shall be able to cancel the use case at any time prior to submitting it.
+- Constraints from UC-STU-deactivate-student: because a deactivated student stays on her team (BR-student-lifecycle), reactivation needs no team reassignment, and she is again owed and owes peer evaluations from the next evaluated week (BR-submission-owed, BR-evaluatee-active). Weeks that passed while she was deactivated are not reopened (BR-evaluation-submission-window). The same callers may reactivate as may deactivate (BR-student-lifecycle), and reactivating an active student is refused the way UC-STU-deactivate-student 6a refuses a repeat deactivation. Until this use case is built, the general student edit (`PUT /students/{studentId}`) may still set an instructor-chosen student back to active, but may no longer deactivate her.
 
 **Related Use Cases:** UC-STU-delete-student: Delete a student; UC-STU-deactivate-student: Deactivate a student
 **Assumptions:**
