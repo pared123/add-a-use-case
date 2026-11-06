@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -395,6 +396,27 @@ class EvaluationServiceTest {
     }
 
     @Test
+    void testAddPeerEvaluationOfADeactivatedEvaluatee() {
+        // Given: BR-evaluatee-active. Woody is deactivated but, per BR-student-lifecycle, still on Amanda's team
+        LocalDate fixedDate = LocalDate.of(2023, 8, 13); // previous week is 2023-W31, an active week
+        Clock fixedClock = Clock.fixed(fixedDate.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        given(this.clock.instant()).willReturn(fixedClock.instant());
+        given(this.clock.getZone()).willReturn(fixedClock.getZone());
+        this.woody.setEnabled(false);
+
+        PeerEvaluation newPeerEvaluation = new PeerEvaluation("2023-W31", amanda, woody, List.of(), "public comment", "private comment");
+
+        // When
+        Throwable throwable = catchThrowable(() -> this.evaluationService.addPeerEvaluation(newPeerEvaluation));
+
+        // Then
+        assertThat(throwable)
+                .isInstanceOf(PeerEvaluationIllegalArgumentException.class)
+                .hasMessage("Woody Allen's account is deactivated, so she cannot be evaluated.");
+        verify(this.evaluationRepository, never()).save(any());
+    }
+
+    @Test
     void testAddPeerEvaluationDuplicatedEvaluation() {
         // Given
         LocalDate fixedDate = LocalDate.of(2023, 8, 8);
@@ -590,6 +612,23 @@ class EvaluationServiceTest {
         assertThat(report.getPeerEvaluationAverages().get(1).getAverageTotalScore()).isCloseTo(50.0, within(0.01));
         assertThat(report.getPeerEvaluationAverages().get(2).getAverageTotalScore()).isCloseTo(51.0, within(0.01));
         assertThat(report.getPeerEvaluationAverages().get(3).getAverageTotalScore()).isCloseTo(52.0, within(0.01));
+    }
+
+    @Test
+    void testGenerateWeeklyPeerEvaluationReportForSectionOmitsDeactivatedStudent() {
+        // Given: BR-evaluatee-active. Jerry (id 5) is deactivated and still on Team1
+        this.students.stream().filter(student -> student.getId().equals(5)).findFirst().orElseThrow().setEnabled(false);
+        given(this.sectionRepository.findById(anyInt())).willReturn(Optional.of(new Section("2023-2024", LocalDate.of(2023, 8, 14), LocalDate.of(2024, 4, 29), true, DayOfWeek.MONDAY, LocalTime.of(23, 59), DayOfWeek.TUESDAY, LocalTime.of(23, 59))));
+        given(this.studentRepository.findBySectionSectionId(anyInt())).willReturn(this.students);
+        given(this.evaluationRepository.findByWeekAndEvaluateeId("2023-W31", 3)).willReturn(this.johnsEvaluations);
+
+        // When
+        WeeklyPeerEvaluationReport report = this.evaluationService.generateWeeklyPeerEvaluationReportForSection(2, "2023-W31");
+
+        // Then: the other four are listed, Jerry is not, and John's average is unchanged
+        assertThat(report.getPeerEvaluationAverages()).hasSize(4);
+        assertThat(report.getPeerEvaluationAverages()).extracting("studentId").containsExactly(3, 4, 6, 7);
+        assertThat(report.getPeerEvaluationAverages().get(0).getAverageTotalScore()).isCloseTo(51.33, within(0.01));
     }
 
     @Test

@@ -67,6 +67,13 @@ public class EvaluationService {
             throw new PeerEvaluationIllegalArgumentException("The evaluator and evaluatee must be on the same team.");
         }
 
+        // Make sure the evaluatee's account is active (BR-evaluatee-active): a deactivated student stays on her
+        // team (BR-student-lifecycle), so the same-team check above does not exclude her
+        Student evaluatee = newPeerEvaluation.getEvaluatee();
+        if (!evaluatee.isEnabled()) {
+            throw new PeerEvaluationIllegalArgumentException(evaluatee.getFirstName() + " " + evaluatee.getLastName() + "'s account is deactivated, so she cannot be evaluated.");
+        }
+
         // Make sure this is not a duplicate evaluation
         if (this.evaluationRepository.findByWeekAndEvaluatorIdAndEvaluateeId(newPeerEvaluation.getWeek(), newPeerEvaluation.getEvaluator().getId(), newPeerEvaluation.getEvaluatee().getId()).isPresent()) {
             throw new PeerEvaluationIllegalArgumentException("You have already submitted an evaluation for " + newPeerEvaluation.getEvaluatee().getFirstName() + " in this week.");
@@ -220,8 +227,8 @@ public class EvaluationService {
 
         report.setSectionName(this.sectionRepository.findById(sectionId).orElseThrow(() -> new ObjectNotFoundException("section", sectionId)).getSectionName());
 
-        // Get all students in the section
-        List<Student> students = this.studentRepository.findBySectionSectionId(sectionId).stream().filter(student -> student.getTeam() != null).collect(Collectors.toList());
+        // Get the section's students who are on a team and whose account is active (BR-evaluatee-active)
+        List<Student> students = this.studentRepository.findBySectionSectionId(sectionId).stream().filter(student -> student.getTeam() != null && student.isEnabled()).collect(Collectors.toList());
 
         // For each student, compute her average total score, collect all public comments and private comments, and compute rating averages for each criterion.
         students.forEach(student -> {
