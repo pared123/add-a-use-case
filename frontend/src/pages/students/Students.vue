@@ -71,6 +71,7 @@
       <EditStudentForm
         :studentId="studentBeingEditedId"
         @close-dialog="closeDialog"
+        @student-deactivated="loadStudents"
       ></EditStudentForm>
     </el-dialog>
   </el-card>

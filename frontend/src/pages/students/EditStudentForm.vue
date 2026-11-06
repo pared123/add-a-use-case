@@ -13,14 +13,22 @@
     <el-form-item label="Username:" prop="username">
       <el-input v-model="studentBeingEdited.username"></el-input>
     </el-form-item>
-    <el-form-item label="Status:" prop="enabled">
-      <el-switch
-        v-model="studentBeingEdited.enabled"
-        inline-prompt
-        active-text="Enabled"
-        inactive-text="Disabled"
-        style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
-      />
+    <el-form-item label="Status:">
+      <!-- UC-STU-deactivate-student: deactivation is its own confirmed action, not a field of this form.
+           3a: a deactivated student shows her status and no Deactivate button. -->
+      <el-tag v-if="studentBeingEdited.enabled" type="success">Active</el-tag>
+      <el-tag v-else type="danger">Deactivated</el-tag>
+      <el-button
+        v-if="studentBeingEdited.enabled"
+        type="danger"
+        plain
+        size="small"
+        style="margin-left: 12px"
+        :loading="deactivating"
+        @click="confirmAndDeactivate()"
+      >
+        Deactivate
+      </el-button>
     </el-form-item>
     <el-form-item label="First Name:" prop="firstName">
       <el-input v-model="studentBeingEdited.firstName"></el-input>
@@ -42,14 +50,14 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Student } from '@/apis/student/types'
 import type { FormInstance } from 'element-plus'
-import { findStudentById, updateStudent } from '@/apis/student'
+import { deactivateStudent, findStudentById, updateStudent } from '@/apis/student'
 import { ref, onMounted } from 'vue'
 
 const { studentId } = defineProps(['studentId'])
-const emit = defineEmits(['close-dialog'])
+const emit = defineEmits(['close-dialog', 'student-deactivated'])
 
 // Note that the structure of the userData is NOT the same as the User interface since the roles are stored as an array
 const studentBeingEdited = ref<Student>({
@@ -64,6 +72,8 @@ const studentBeingEdited = ref<Student>({
 
 const studentForm = ref<FormInstance>() // Form reference
 
+const deactivating = ref(false) // Disables the button while the request is in flight
+
 // Validation rules
 const rules = {
   username: [
@@ -74,7 +84,6 @@ const rules = {
       trigger: 'blur'
     }
   ],
-  enabled: [{ required: true, message: 'Please select the status of the user.', trigger: 'blur' }],
   firstName: [
     { required: true, message: 'Please provide the first name of the user.', trigger: 'blur' }
   ],
@@ -115,12 +124,44 @@ async function updateExistingStudent() {
     lastName: studentBeingEdited.value.lastName,
     email: studentBeingEdited.value.email
   }
-  console.log(updatedStudent)
   // Call the API to update the user
   await updateStudent(updatedStudent)
 
   ElMessage.success('Student updated successfully')
   emit('close-dialog')
+}
+
+async function confirmAndDeactivate() {
+  const fullName = `${studentBeingEdited.value.firstName} ${studentBeingEdited.value.lastName}`
+  // Step 4: warn and name the consequences (UC-STU-deactivate-student Associated Information)
+  try {
+    await ElMessageBox.confirm(
+      `${fullName} will no longer be able to log in, and is logged out at her next action if she is ` +
+        `logged in now. She will not be reminded or peer-evaluated. She stays on her team, and her weekly ` +
+        `activity reports and peer evaluations are kept. Reactivation is not yet available on this screen.`,
+      `Deactivate ${fullName}?`,
+      {
+        confirmButtonText: 'Deactivate',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return // 5a: cancelled, nothing is sent
+  }
+
+  deactivating.value = true
+  try {
+    // Step 6. A 403 (3b) or 409 (6a) is shown by the request interceptor's error message.
+    const result = await deactivateStudent(studentBeingEdited.value.id as number)
+    studentBeingEdited.value.enabled = result.data.enabled
+    ElMessage.success(`${fullName} has been deactivated.`)
+    emit('student-deactivated')
+  } catch {
+    await loadStudent(studentId) // 6a: show the current status
+  } finally {
+    deactivating.value = false
+  }
 }
 </script>
 

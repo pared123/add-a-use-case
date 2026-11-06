@@ -57,7 +57,7 @@ classDiagram
 
 Files:
 - Backend: `student/StudentController.java`, `student/StudentService.java`, `student/StudentSecurityService.java`, `security/SecurityConfiguration.java` (route rule, decoder), `security/ActiveAccountJwtValidator.java` (new), `security/authorizationmanagers/StudentLifecycleAuthorizationManager.java` (new), `system/exception/StudentAlreadyDeactivatedException.java` (new) and `ExceptionHandlerAdvice.java`, `evaluation/EvaluationService.java`.
-- Frontend: `pages/students/EditStudentForm.vue` (the switch becomes a status tag and a Deactivate button), `pages/students/DeactivateStudentDialog.vue` (new), `apis/student/index.ts` (`deactivateStudent`), `pages/evaluations/SubmitTeamsEvaluations.vue` (lists only active teammates).
+- Frontend: `pages/students/EditStudentForm.vue` (the switch becomes a status tag and a Deactivate button whose warning is an `ElMessageBox.confirm`, the pattern `Teams.vue` already uses), `pages/students/Students.vue` (reloads the list), `apis/student/index.ts` (`deactivateStudent`), `pages/evaluations/SubmitTeamsEvaluations.vue` (lists only active teammates). Revised while building: a separate `DeactivateStudentDialog.vue` was dropped, since the confirm box carries the whole warning.
 
 ## Sequence
 
@@ -66,7 +66,7 @@ Files:
 ```mermaid
 sequenceDiagram
     actor I as Instructor / course admin
-    participant F as EditStudentForm + DeactivateStudentDialog
+    participant F as EditStudentForm (ElMessageBox warning)
     participant SC as SecurityFilterChain
     participant C as StudentController
     participant S as StudentService
