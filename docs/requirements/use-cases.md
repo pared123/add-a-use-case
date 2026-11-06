@@ -1479,6 +1479,9 @@ Details:
 - **3b. The instructor is not assigned to the student's course section, and is not the course admin of its course:**
   - 3b1. The system refuses the deactivation as not permitted (BR-student-lifecycle) and changes nothing. This holds even when the request does not come through step 2.
   - 3b2. Use case ends.
+- **5a. The course admin or instructor cancels at the warning:**
+  - 5a1. The system closes the warning and changes nothing; the student stays active.
+  - 5a2. Use case ends.
 - **6a. The student was deactivated by someone else after step 2:**
   - 6a1. The system informs the course admin or instructor that the student is already deactivated, and changes nothing.
   - 6a2. Use case ends.
