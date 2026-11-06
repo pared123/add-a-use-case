@@ -153,7 +153,7 @@ async function confirmAndDeactivate() {
   deactivating.value = true
   try {
     // Step 6. A 403 (3b) or 409 (6a) is shown by the request interceptor's error message.
-    const result = await deactivateStudent(studentBeingEdited.value.id)
+    const result = await deactivateStudent(studentBeingEdited.value.id as number)
     studentBeingEdited.value.enabled = result.data.enabled
     ElMessage.success(`${fullName} has been deactivated.`)
     emit('student-deactivated')
