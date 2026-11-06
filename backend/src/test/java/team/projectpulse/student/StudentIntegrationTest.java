@@ -394,7 +394,31 @@ class StudentIntegrationTest extends AbstractIntegrationTest {
 
         this.mockMvc.perform(get(this.baseUrl + "/students/4").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.studentJohnToken))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(StatusCode.UNAUTHORIZED));
+                .andExpect(jsonPath("$.code").value(StatusCode.UNAUTHORIZED))
+                .andExpect(jsonPath("$.message").value("The access token provided is expired, revoked, malformed, or invalid for other reasons.")); // stu.md API contract
+    }
+
+    @Test
+    void testInstructorNotAssignedToTheSectionCannotDeactivateStudentJohn() throws Exception {
+        // Extension 3b: Bill teaches the same course but is taken off section 2, and he is not the course admin
+        Section section2 = this.sectionRepository.findById(2).orElseThrow();
+        Instructor bill = section2.getInstructors().stream().filter(i -> i.getId().equals(2)).findFirst().orElseThrow();
+        section2.removeInstructor(bill);
+        this.sectionRepository.saveAndFlush(section2);
+
+        this.mockMvc.perform(patch(this.baseUrl + "/students/4/deactivate").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.instructorBillToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
+
+        assertThat(this.studentRepository.findById(4).orElseThrow().isEnabled()).isTrue();
+    }
+
+    @Test
+    void testDeactivatingAnUnknownStudentIsForbidden() throws Exception {
+        // stu.md API contract: an unknown id is 403, since the security services fail closed
+        this.mockMvc.perform(patch(this.baseUrl + "/students/999999/deactivate").accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(StatusCode.FORBIDDEN));
     }
 
     @Test
