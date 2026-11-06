@@ -138,7 +138,7 @@ async function confirmAndDeactivate() {
     await ElMessageBox.confirm(
       `${fullName} will no longer be able to log in, and is logged out at her next action if she is ` +
         `logged in now. She will not be reminded or peer-evaluated. She stays on her team, and her weekly ` +
-        `activity reports and peer evaluations are kept. Her account can be reactivated later.`,
+        `activity reports and peer evaluations are kept. Reactivation is not yet available on this screen.`,
       `Deactivate ${fullName}?`,
       {
         confirmButtonText: 'Deactivate',
